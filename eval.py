@@ -7,7 +7,7 @@ import eval_func as Eval
 if __name__ == "__main__":
     criterion = nn.MSELoss()
 
-    eval = input("eval(ae_net, g_net, d_net, save_eval): ")
+    eval = input("eval(ae_net, g_net, d_net, d_net2, save_eval): ")
     if(eval == "ae_net"):
         ae_model = input("ae_model: ")
         ae_net = torch.load("models/ae_net/" + ae_model)
@@ -28,6 +28,11 @@ if __name__ == "__main__":
         dataRoot = input("dataRoot: ")
         ansRoot = input("ansRoot: ")
         Eval.d_eval(ae_net, d_net, dataRoot, ansRoot)
+    elif(eval == "d_net2"):
+        d_model = input("d_model: ")
+        d_net = torch.load("models/d_net/" + d_model)
+        ansRoot = input("ansRoot: ")
+        Eval.d_eval2(d_net, ansRoot)
     elif(eval == "save_eval"):
         ae_model = input("ae_model: ")
         ae_net = torch.load("models/ae_net/" + ae_model)

@@ -1,11 +1,14 @@
 import torch
 from torchvision import transforms as transforms
 import dataset as ds
+import torch.nn as nn
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def ae_test(net, criterion):
+def ae_test(net):
     print("ae_test")
+    criterion = nn.MSELoss()
     net.cuda()
     net.eval()
     criterion.cuda()
@@ -14,11 +17,11 @@ def ae_test(net, criterion):
 
     test_loader = ds.prepare_dataset("train")
     with torch.no_grad():
-        for data, ans in test_loader:
+        for data, ans, _ in test_loader:
             data = data.to(device)
             ans = ans.to(device)
 
-            embeddings, res = net(data)
+            _, res = net(data)
 
             loss = criterion(res, data)
 
@@ -28,8 +31,9 @@ def ae_test(net, criterion):
 
     print(avg)
 
-def g_test(ae_net, g_net, d_net, criterion):
+def g_test(ae_net, g_net, d_net):
     print("g_test")
+    criterion = nn.MSELoss()
     ae_net.cuda()
     g_net.cuda()
     d_net.cuda()
@@ -42,11 +46,11 @@ def g_test(ae_net, g_net, d_net, criterion):
 
     test_loader = ds.prepare_dataset("train")
     with torch.no_grad():
-        for data, ans in test_loader:
+        for data, ans, _ in test_loader:
             data = data.to(device)
             ans = ans.to(device)
 
-            embeddings, res = ae_net(data)
+            embeddings, _ = ae_net(data)
 
             g_out = g_net(embeddings)
 
@@ -62,8 +66,9 @@ def g_test(ae_net, g_net, d_net, criterion):
 
     print(avg)
 
-def d_test(ae_net, g_net, d_net, criterion):
+def d_test(ae_net, g_net, d_net):
     print("d_test")
+    criterion = nn.MSELoss()
     ae_net.cuda()
     g_net.cuda()
     d_net.cuda()
@@ -76,15 +81,14 @@ def d_test(ae_net, g_net, d_net, criterion):
 
     r_real_tmp = 0
     r_fake_tmp = 0
-    size = 0
 
     test_loader = ds.prepare_dataset("train")
     with torch.no_grad():
-        for data, ans in test_loader:
+        for data, ans, _ in test_loader:
             data = data.to(device)
             ans = ans.to(device)
 
-            embeddings, res = ae_net(data)
+            embeddings, _ = ae_net(data)
 
             g_out = g_net(embeddings)
 
@@ -103,3 +107,28 @@ def d_test(ae_net, g_net, d_net, criterion):
     r_fake = r_fake_tmp / len(losses)
         
     print("d_loss: %f" % loss + " r_real: %f" % r_real + " r_fake: %f" % r_fake)
+
+def d_test2(d_net):
+    print("d_test2")
+    criterion = nn.CrossEntropyLoss()
+    d_net.cuda()
+    d_net.eval()
+    criterion.cuda()
+
+    losses = []
+
+    test_loader = ds.prepare_dataset("test")
+    with torch.no_grad():
+        for _, ans, label in test_loader:
+            ans = ans.to(device)
+            label = label.to(device)
+
+            d_out = d_net(ans)
+
+            d_loss = criterion(d_out, label)
+
+            losses.append(d_loss)
+    
+    loss = sum(losses) / len(losses)
+        
+    print("d_loss: %f" % loss)

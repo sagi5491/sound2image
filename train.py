@@ -7,8 +7,10 @@ import model as M
 import train_func as Train
 
 if __name__ == "__main__":
-    criterion = nn.MSELoss()
-    target = input("target(ae_net, g_net, d_net, gan): ")
+    # criterion = nn.MSELoss()
+    # criterion = nn.CrossEntropyLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    target = input("target(ae_net, g_net, d_net, d_net2, gan, gan2): ")
     if(target == "ae_net"):
         mode = input("mode(new, pre): ")
         if(mode == "new"):
@@ -23,7 +25,7 @@ if __name__ == "__main__":
             exit()
 
         num_epochs = input("num_epochs: ")
-        ae_net, ae_hist = Train.ae_train(ae_net, criterion, num_epochs=int(num_epochs))
+        ae_net, ae_hist = Train.ae_train(ae_net, num_epochs=int(num_epochs))
         now = datetime.now()
         torch.save(ae_net, "models/ae_net/ae_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
         plt.plot(ae_hist, label="ae_loss")
@@ -51,7 +53,7 @@ if __name__ == "__main__":
             exit()
         
         num_epochs = input("num_epochs: ")
-        g_net, d_net, g_hist, d_hist = Train.train(ae_net, g_net, d_net, criterion, num_epochs=int(num_epochs))
+        g_net, d_net, g_hist, d_hist = Train.train(ae_net, g_net, d_net, num_epochs=int(num_epochs))
         now = datetime.now()
         torch.save(g_net, "models/g_net/g_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
         plt.plot(g_hist, label="g_loss")
@@ -75,11 +77,31 @@ if __name__ == "__main__":
             exit()
         
         num_epochs = input("num_epochs: ")
-        d_net, d_hist = Train.d_train(ae_net, d_net, criterion, num_epochs=int(num_epochs))
+        d_net, d_hist = Train.d_train(ae_net, d_net, num_epochs=int(num_epochs))
         now = datetime.now()
         torch.save(d_net, "models/d_net/d_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
         plt.plot(d_hist, label="d_loss")
         plt.savefig("losses/d_net/d_%s.png" % now.strftime("%Y%m%d_%H%M%S"))
+    
+    elif(target == "d_net2"):
+        mode = input("mode(new, pre): ")
+        if(mode == "new"):
+            d_net = M.D()
+
+        elif(mode == "pre"):
+            d_model = input("d_model: ")
+            d_net = torch.load("models/d_net/" + d_model)
+
+        else:
+            print("Error: invalid mode")
+            exit()
+
+        num_epochs = input("num_epochs: ")
+        d_net, d_hist = Train.d_train2(d_net, num_epochs=int(num_epochs))
+        now = datetime.now()
+        torch.save(d_net, "models/d_net/d2_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
+        plt.plot(d_hist, label="d_loss")
+        plt.savefig("losses/d_net/d2_%s.png" % now.strftime("%Y%m%d_%H%M%S"))        
 
     elif(target == "gan"):
         mode = input("mode(new, g_pre, d_pre, pre): ")
@@ -116,7 +138,7 @@ if __name__ == "__main__":
             exit()
 
         num_epochs = input("num_epochs: ")
-        g_net, d_net, g_hist, d_hist = Train.train(ae_net, g_net, d_net, criterion, num_epochs=int(num_epochs))
+        g_net, d_net, g_hist, d_hist = Train.train(ae_net, g_net, d_net, num_epochs=int(num_epochs))
         now = datetime.now()
         torch.save(g_net, "models/g_net/g_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
         torch.save(d_net, "models/d_net/d_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
@@ -124,6 +146,18 @@ if __name__ == "__main__":
         plt.plot(d_hist, label="d_loss")
         plt.savefig("losses/gan/gan_%s.png" % now.strftime("%Y%m%d_%H%M%S"))
 
+    elif(target == "gan2"):
+        ae_model = input("ae_model: ")
+        ae_net = torch.load("models/ae_net/" + ae_model)
+        g_net = M.Generator()
+        d_model = input("d_model: ")
+        d_net = torch.load("models/d_net/" + d_model)
+        num_epochs = input("num_epochs: ")
+        g_net, g_hist = Train.train2(ae_net, g_net, d_net, num_epochs=int(num_epochs))
+        now = datetime.now()
+        torch.save(g_net, "models/g_net/g2_%s.pth" % now.strftime("%Y%m%d_%H%M%S"))
+        plt.plot(g_hist, label="g_loss")
+        plt.savefig("losses/gan/gan2_%s.png" % now.strftime("%Y%m%d_%H%M%S"))
     else:
         print("Error: invalid target")
         exit()

@@ -291,3 +291,65 @@ class Discriminator(nn.Module):
         x = x.view(x.size(0))
 
         return x
+
+class D(nn.Module):
+    def __init__(self):
+        super(D, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3, 1, 1) # 128*128*1 -> 128*128*32
+        self.conv1_bn = nn.BatchNorm2d(32)
+
+        self.conv2 = nn.Conv2d(32, 64, 3, 2, 1) # 128*128*32 -> 64*64*64
+        self.conv2_bn = nn.BatchNorm2d(64)
+
+        self.conv3 = nn.Conv2d(64, 128, 3, 2, 1) # 64*64*64 -> 32*32*128
+        self.conv3_bn = nn.BatchNorm2d(128)
+
+        self.conv4 = nn.Conv2d(128, 256, 3, 2, 1) # 32*32*128 -> 16*16*256
+        self.conv4_bn = nn.BatchNorm2d(256)
+
+        self.conv5 = nn.Conv2d(256, 512, 3, 2, 1) # 16*16*256 -> 8*8*512
+        self.conv5_bn = nn.BatchNorm2d(512)
+
+        self.conv6 = nn.Conv2d(512, 1024, 3, 2, 1) # 8*8*512 -> 4*4*1024
+        self.conv6_bn = nn.BatchNorm2d(1024)
+
+        self.conv7 = nn.Conv2d(1024, 2048, 3, 2, 1) # 4*4*1024 -> 2*2*2048
+        self.conv7_bn = nn.BatchNorm2d(2048)
+
+        self.li1 = nn.Linear(8192, 1024)
+
+        self.li2 = nn.Linear(1024, 512)
+
+        self.li3 = nn.Linear(512, 256)
+
+        self.li4 = nn.Linear(256, 128)
+
+        self.li5 = nn.Linear(128, 64)
+
+        self.li6 = nn.Linear(64, 32)
+
+        self.li7 = nn.Linear(32, 16)
+
+        self.li8 = nn.Linear(16, 8)
+    
+    def forward(self, x):
+        x = F.relu(self.conv1_bn(self.conv1(x)))
+        x = F.relu(self.conv2_bn(self.conv2(x)))
+        x = F.relu(self.conv3_bn(self.conv3(x)))
+        x = F.relu(self.conv4_bn(self.conv4(x)))
+        x = F.relu(self.conv5_bn(self.conv5(x)))
+        x = F.relu(self.conv6_bn(self.conv6(x)))
+        x = F.relu(self.conv7_bn(self.conv7(x)))
+
+        x = x.view(x.size(0), -1)
+
+        x = F.relu(self.li1(x))
+        x = F.relu(self.li2(x))
+        x = F.relu(self.li3(x))
+        x = F.relu(self.li4(x))
+        x = F.relu(self.li5(x))
+        x = F.relu(self.li6(x))
+        x = F.relu(self.li7(x))
+        x = torch.sigmoid(self.li8(x))
+
+        return x

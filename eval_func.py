@@ -3,6 +3,7 @@ from torchvision import transforms as transforms
 from PIL import Image
 import json
 import os
+import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 transform = transforms.Compose([
@@ -26,7 +27,6 @@ def ae_eval(net, root):
         embeddings, res = net(data)
 
         img = res[0][0]
-        print(img)
         img = (img + 1) / 2
         p = transforms.functional.to_pil_image(img)
         p.save("evals/ae_net/eval.png")
@@ -82,9 +82,25 @@ def d_eval(ae_net, d_net, dataRoot, ansRoot):
 
         d_out = d_net(ans, embeddings)
 
-        r = torch.sum(d_out) / d_out.size(0)
+    print("r: %f" % d_out)
+
+def d_eval2(d_net, ansRoot):
+    print("d_eval2")
+    d_net.cuda()
+    d_net.eval()
+
+    ans = Image.open("images/" + ansRoot + ".png")
+
+    ans = transform(ans)
+
+    ans = torch.unsqueeze(ans, 0)
+
+    with torch.no_grad():
+        ans = ans.to(device)
+
+        d_out = d_net(ans)
         
-    print("r: %f" % r)
+    print(d_out)
 
 def save_eval(ae_net, g_net):
     print("g_eval")
@@ -100,14 +116,14 @@ def save_eval(ae_net, g_net):
         for e in di:
 
             try:
-                os.mkdir("evals/g_net4/" + e)
+                os.mkdir("evals/g_net6/" + e)
             except FileExistsError as err:
                 print(err)
         
             for f in di[e]:
 
                 try:
-                    os.mkdir("evals/g_net4/" + e + "/" + f.split("/")[0])
+                    os.mkdir("evals/g_net6/" + e + "/" + f.split("/")[0])
                 except FileExistsError as err:
                     print(err)
 
@@ -130,4 +146,4 @@ def save_eval(ae_net, g_net):
                 img = output[0]
                 img = (img + 1) / 2
                 p = transforms.functional.to_pil_image(img)
-                p.save("evals/g_net4/" + e + "/" + f + ".png")
+                p.save("evals/g_net6/" + e + "/" + f + ".png")

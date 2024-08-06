@@ -13,6 +13,7 @@ import numpy as np
 from torchvision import transforms as transforms
 import matplotlib.pyplot as plt
 import soundfile as sf
+import torch.nn.functional as F
 
 class MyTransforms:
     def __init__(self) -> None:
@@ -20,7 +21,6 @@ class MyTransforms:
 
     def __call__(self, x: torch.Tensor) -> torch.Tensor:
         return x
-
 class MyDataset(Dataset):
     def __init__(self, root: str, transform) -> None:
         super().__init__()
@@ -28,18 +28,41 @@ class MyDataset(Dataset):
         with open(root + ".json") as f:
             di = json.load(f)
         self.path = []
+        self.classes = []
         for e in di:
             for f in di[e]:
                 self.path.append(e + "/" + f)
+                if(e == "bagpipe"):
+                    self.classes.append(0)
+                elif(e == "clarinet"):
+                    self.classes.append(1)
+                elif(e == "flute"):
+                    self.classes.append(2)
+                elif(e == "drum"):
+                    self.classes.append(3)
+                elif(e == "acoustic_guitar"):
+                    self.classes.append(4)
+                elif(e == "ukulele"):
+                    self.classes.append(5)
+                elif(e == "accordion"):
+                    self.classes.append(6)
+                elif(e == "bassoon"):
+                    self.classes.append(7)
+                else:
+                    print("error")
+                    exit()
     
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         data = Image.open("melspectrograms/" + self.path[index] + ".png")
         ans = Image.open("images/" + self.path[index] + ".png")
-    
+        label = self.classes[index]
+        label = torch.tensor(label, dtype=torch.int64)
+
         data = self.transforms(data)
         ans = self.transforms(ans)
-
-        return data, ans
+        label = F.one_hot(label, num_classes=8).float()
+        
+        return data, ans, label
 
     def __len__(self) -> int:
         return len(self.path)
@@ -248,7 +271,7 @@ def prepare_dataset(mode):
             shuffle=False,
             num_workers=2
         )
-        return testloader
+        return testloader       
 
 # if __name__ == "__main__":
 #     file_list = glob.glob('images/*.png')
